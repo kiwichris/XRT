@@ -10,8 +10,18 @@
  * License version 2 or Apache License, Version 2.0.
  */
 
+#ifdef __linux__
 #include <asm/errno.h>
 #include <linux/vmalloc.h>
+#else
+#include <errno.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#define vmalloc malloc
+#define vfree free
+#endif
+
 #include "xclbin.h"
 #include "xrt_xclbin.h"
 

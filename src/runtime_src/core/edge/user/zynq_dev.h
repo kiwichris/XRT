@@ -16,7 +16,6 @@
 #ifndef _XCL_ZYNQ_DEV_H_
 #define _XCL_ZYNQ_DEV_H_
 
-#include <fstream>
 #include <string>
 #include <vector>
 
@@ -51,9 +50,6 @@ public:
 
     static zynq_device *get_dev();
 private:
-    std::fstream sysfs_open(const std::string& entry, std::string& err,
-        bool write = false, bool binary = false);
-
     std::string sysfs_root;
     zynq_device(const std::string& sysfs_base);
     zynq_device(const zynq_device& s) = delete;

@@ -59,6 +59,10 @@
  *      (experimental)
  * 15   Get Information about Compute Unit     DRM_IOCTL_ZOCL_INFO_CU         drm_zocl_info_cu
  *      (experimental)
+ * 16   Request data read or writes. An ioctl  DRM_IOCTL_ZOCL_REQUEST         drm_zocl_request
+ *      method for sysfs data on non-Linux
+ *      hosts.
+ *      (experimental)
  *
  * ==== ====================================== ============================== ==================================
  */
@@ -122,6 +126,8 @@ enum drm_zocl_ops {
 	DRM_ZOCL_AIE_PUTCMD,
 	/* Set/Get freq of AIE partition */
 	DRM_ZOCL_AIE_FREQSCALE,
+	/* Request data read or write */
+	DRM_ZOCL_REQUEST,
 	DRM_ZOCL_NUM_IOCTLS
 };
 
@@ -528,6 +534,29 @@ struct drm_zocl_error_inject {
 	uint16_t		err_class;
 };
 
+/**
+ * struct drm_zocl_request- Requests to read or write to
+ * used with DRM_IOCTL_ZOCL_REQUEST ioctl
+ *
+ * @req_flags  : Requested flags
+ * @req_type   : Type of request, ie the sysfs entry
+ * @data_size  : Size of the data buffer
+ * @data_level : Level of valid data in the buffer
+ * @data       : Data buffer to read data into or write from
+ */
+enum drm_zocl_request_flags {
+  ZOCL_REQ_READ = 1 << 0,
+  ZOCL_REQ_WRITE = 1 << 1,
+};
+
+struct drm_zocl_request {
+  enum drm_zocl_request_flags req_flags;
+  char req_type[32];
+  uint32_t data_size;
+  uint32_t data_level;
+  char* data;
+};
+
 #define DRM_IOCTL_ZOCL_CREATE_BO       DRM_IOWR(DRM_COMMAND_BASE + \
                                        DRM_ZOCL_CREATE_BO,     \
                                        struct drm_zocl_create_bo)
@@ -573,5 +602,7 @@ struct drm_zocl_error_inject {
 #define DRM_IOCTL_ZOCL_AIE_PUTCMD      DRM_IOWR(DRM_COMMAND_BASE + \
                                        DRM_ZOCL_AIE_PUTCMD, struct drm_zocl_aie_cmd)
 #define DRM_IOCTL_ZOCL_AIE_FREQSCALE   DRM_IOWR(DRM_COMMAND_BASE + \
-				       DRM_ZOCL_AIE_FREQSCALE, struct drm_zocl_aie_freq_scale)
+                                       DRM_ZOCL_AIE_FREQSCALE, struct drm_zocl_aie_freq_scale)
+#define DRM_IOCTL_ZOCL_REQUEST         DRM_IOWR(DRM_COMMAND_BASE + \
+                                       DRM_ZOCL_REQUEST, struct drm_zocl_request)
 #endif

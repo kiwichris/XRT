@@ -88,7 +88,7 @@ public:
 
   double xclGetDeviceClockFreqMHz();
 
-  uint xclGetNumLiveProcesses();
+  unsigned int xclGetNumLiveProcesses();
 
   std::string xclGetSysfsPath(const std::string& entry);
 

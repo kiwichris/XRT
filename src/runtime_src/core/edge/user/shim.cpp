@@ -15,7 +15,11 @@
  * under the License.
  */
 #include "shim.h"
+#if __rtems__
+#include "system_rtems.h"
+#else
 #include "system_linux.h"
+#endif
 
 #include "core/include/shim_int.h"
 #include "core/include/xcl_perfmon_parameters.h"
@@ -115,9 +119,21 @@ namespace ZYNQ {
 //initializing static member
 std::map<uint64_t, uint32_t *> shim::mKernelControl;
 
+std::shared_ptr<xrt_core::device>
+get_userpf_device(xrt_core::device::handle_type device_handle, xrt_core::device::id_type id)
+{
+#if __rtems__
+  return xrt_core::edge_rtems::get_userpf_device(device_handle, id);
+#elif __linux
+  return xrt_core::edge_linux::get_userpf_device(device_handle, id);
+#else
+  return xrt_core::get_userpf_device(device_handle, id);
+#endif
+}
+
 shim::
 shim(unsigned index)
-  : mCoreDevice(xrt_core::edge_linux::get_userpf_device(this, index))
+  : mCoreDevice(get_userpf_device(this, index))
   , mBoardNumber(index)
   , mKernelClockFreq(100)
   , mCuMaps(128, nullptr)
@@ -164,6 +180,7 @@ int
 shim::
 mapKernelControl(const std::vector<std::pair<uint64_t, size_t>>& offsets)
 {
+#ifndef __rtems__
   void *ptr = NULL;
 
   if (offsets.size() == 0) {
@@ -196,6 +213,7 @@ mapKernelControl(const std::vector<std::pair<uint64_t, size_t>>& offsets)
     }
     offset_it++;
   }
+#endif
 
   return 0;
 }
@@ -795,18 +813,18 @@ xclLoadAxlf(const axlf *buffer)
   return ret ? -errno : ret;
 }
 
-int 
+int
 shim::
 secondXclbinLoadCheck(std::shared_ptr<xrt_core::device> core_dev, const axlf *top) {
   try {
     static int xclbin_hw_emu_count = 0;
-        
+
     if (core_dev->get_xclbin_uuid() != xrt::uuid(top->m_header.uuid)) {
       xclbin_hw_emu_count++;
 
       if (xclbin_hw_emu_count > 1) {
         xclLog(XRT_WARNING, "%s: Skipping as xclbin is already loaded. Only single XCLBIN load is supported for hw_emu embedded designs.", __func__);
-        return 0; 
+        return 0;
       }
     } else {
       xclLog(XRT_INFO, "%s: Loading the XCLBIN", __func__);
@@ -914,7 +932,7 @@ xclExecWait(int timeoutMilliSec)
   return poll(&uifdVector[0], uifdVector.size(), timeoutMilliSec);
 }
 
-uint
+unsigned int
 shim::
 xclGetNumLiveProcesses()
 {
@@ -964,7 +982,7 @@ xclReadTraceData(void* traceBuf, uint32_t traceBufSz, uint32_t numSamples, uint6
 }
 
 // For DDR4: Typical Max BW = 19.25 GB/s
-double 
+double
 shim::
 xclGetHostReadMaxBandwidthMBps()
 {
@@ -972,7 +990,7 @@ xclGetHostReadMaxBandwidthMBps()
 }
 
 // For DDR4: Typical Max BW = 19.25 GB/s
-double 
+double
 shim::
 xclGetHostWriteMaxBandwidthMBps()
 {
@@ -980,7 +998,7 @@ xclGetHostWriteMaxBandwidthMBps()
 }
 
 // For DDR4: Typical Max BW = 19.25 GB/s
-double 
+double
 shim::
 xclGetKernelReadMaxBandwidthMBps()
 {
@@ -988,7 +1006,7 @@ xclGetKernelReadMaxBandwidthMBps()
 }
 
 // For DDR4: Typical Max BW = 19.25 GB/s
-double 
+double
 shim::
 xclGetKernelWriteMaxBandwidthMBps()
 {
@@ -1802,7 +1820,7 @@ xclProbe()
   return xdp::hal::profiling_wrapper("xclProbe", [] {
 
   const std::string zocl_drm_device = "/dev/dri/" + get_render_devname();
-  int fd;
+  int fd = -1;
   if (boost::filesystem::exists(zocl_drm_device)) {
     fd = open(zocl_drm_device.c_str(), O_RDWR);
     if (fd < 0)
@@ -2216,7 +2234,7 @@ xclExecWait(xclDeviceHandle handle, int timeoutMilliSec)
   }) ;
 }
 
-uint
+unsigned int
 xclGetNumLiveProcesses(xclDeviceHandle handle)
 {
   ZYNQ::shim *drv = ZYNQ::shim::handleCheck(handle);

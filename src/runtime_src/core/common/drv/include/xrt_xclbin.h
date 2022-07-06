@@ -13,7 +13,9 @@
 #ifndef _XRT_XCLBIN_H
 #define _XRT_XCLBIN_H
 
+#ifdef __linux__
 #include <linux/types.h>
+#endif
 
 /* Used for parsing bitstream header */
 #define XHI_EVEN_MAGIC_BYTE     0x0f
